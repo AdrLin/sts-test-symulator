@@ -1084,7 +1084,7 @@ P: Direct Remote ID (zdalna identyfikacja BSP) transmituje przede wszystkim:
 = Direct Remote ID transmituje w czasie rzeczywistym: ID operatora, pozycję BSP, prędkość, wysokość, pozycję pilota, znacznik czasu w sposób umożliwiający odbiór przez urządzenia w pobliżu (Bluetooth/Wi-Fi).
 
 P: Łącze C2 (Command and Control) w BSP to:
-+ Dwukierunkowy link radiowy pomiędzy stacją kontrolną
++ Dwukierunkowe łącze danych pomiędzy jednostką sterującą,a BSP
 - Wbudowany akumulator zapasowy – zgodnie z instrukcją producenta BSP
 - Funkcja ładowania baterii bezprzewodowo
 - Łącze wideo do streamingu obrazu
