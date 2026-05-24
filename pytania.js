@@ -688,7 +688,7 @@ P: Procedura przerwania lotu (Flight Termination) oznacza:
 - Wymianę baterii w locie
 = Procedura przerwania lotu (Flight Termination) to natychmiastowe, wymuszone i nieodwracalne przerwanie zasilania zespołu napędowego drona (odcięcie prądu od silników), mające na celu natychmiastowe sprowadzenie drona na ziemię, bez możliwości dalszego sterowania nim. Klikasz przycisk FTS, silniki gasną w ułamku sekundy, a dron spada jak kamień (lub otwiera się spadochron). Po co stosuje się tak drastyczną procedurę? Stosuje się ją w sytuacji całkowitej utraty kontroli nad dronem (tzw. ucieczka drona / flyaway), gdy maszyna leci np. w stronę autostrady, lotniska lub gęstego tłumu ludzi, a systemy failsafe np RTH zawiodły. Lepiej, żeby dron spadł natychmiast w miarę bezpiecznym miejscu, niż miałby wlecieć w silnik samolotu pasażerskiego.
 
-P: Pilot zauważa w trakcie lotu, że strefa, w której operuje, została właśnie aktywowana (np. czasowa DRA-T, MCTR uruchomione przez wojsko). Powinien:
+P: Pilot zauważa w trakcie lotu, że strefa, w której operuje, została właśnie aktywowana (np. czasowa DRA-P, MCTR uruchomione przez wojsko). Powinien:
 + Natychmiast przerwać operację: zakończyć lot, wycofać BSP z aktywowanej strefy lub bezpiecznie wylądować
 - Ignorować aktywację – ważny jest pierwotny plan zgłoszony uprzednio przez check-in
 - Skontaktować się z klientem i zapytać o decyzję
