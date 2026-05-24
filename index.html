@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symulator egzaminu STS-01 / STS-02</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --panel-2:#1c2229;
+    --line:#30363d;
+    --txt:#e6edf3;
+    --muted:#8b949e;
+    --accent:#ff8c42;
+    --accent-2:#ffd166;
+    --ok:#3fb950;
+    --err:#f85149;
+    --info:#58a6ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'JetBrains Mono','Fira Code',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:15px;line-height:1.55;
+    min-height:100vh;
+  }
+  body{
+    background:
+      radial-gradient(ellipse at top, rgba(255,140,66,0.05), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(88,166,255,0.04), transparent 50%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
+  header.app{
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;margin-bottom:32px;
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;
+  }
+  header.app h1{
+    margin:0;font-size:22px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;
+  }
+  header.app .sub{color:var(--muted);font-size:12px;letter-spacing:0.15em;text-transform:uppercase;}
+  header.app .tag{
+    font-size:11px;color:var(--muted);border:1px solid var(--line);
+    padding:4px 10px;border-radius:2px;background:var(--panel);
+  }
+
+  /* Karta */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    margin:0 0 12px 0;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--accent-2);font-weight:600;
+  }
+  .card p{margin:0 0 12px 0;color:var(--txt);}
+  .card p.muted{color:var(--muted);font-size:13px;}
+
+  /* Tryby */
+  .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:24px;}
+  .mode{
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px;
+    cursor:pointer;transition:all 0.15s;position:relative;
+  }
+  .mode:hover{border-color:var(--accent);transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(255,140,66,0.15);}
+  .mode .num{position:absolute;top:14px;right:18px;color:var(--muted);font-size:11px;}
+  .mode h3{margin:0 0 8px 0;color:var(--accent-2);font-size:14px;letter-spacing:0.08em;text-transform:uppercase;}
+  .mode p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;}
+
+  /* Tabela kategorii */
+  table.cats{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px;}
+  table.cats td{padding:7px 10px;border-bottom:1px solid var(--line);}
+  table.cats td.cat{color:var(--txt);}
+  table.cats td.num{text-align:right;color:var(--accent-2);font-weight:600;width:80px;}
+  table.cats tr:last-child td{border-bottom:none;font-weight:700;color:var(--accent);}
+
+  /* Pytanie */
+  .qbox{
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:24px;margin-bottom:20px;
+  }
+  .qheader{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;
+    padding-bottom:12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);
+    letter-spacing:0.1em;text-transform:uppercase;flex-wrap:wrap;gap:10px;}
+  .qheader .catname{color:var(--accent-2);}
+  .qheader .qnum{color:var(--accent);font-weight:600;}
+  .qtext{font-size:16px;line-height:1.6;margin-bottom:20px;color:var(--txt);}
+  .opts{display:flex;flex-direction:column;gap:8px;}
+  .opt{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
+    padding:12px 16px;cursor:pointer;transition:all 0.1s;
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .opt:hover{border-color:var(--accent);background:#1f2630;}
+  .opt.selected{border-color:var(--accent);background:rgba(255,140,66,0.08);}
+  .opt.correct{border-color:var(--ok);background:rgba(63,185,80,0.1);}
+  .opt.wrong{border-color:var(--err);background:rgba(248,81,73,0.1);}
+  .opt .letter{
+    color:var(--accent);font-weight:700;min-width:24px;
+    background:var(--bg);border:1px solid var(--line);border-radius:2px;
+    padding:2px 8px;font-size:13px;text-align:center;
+  }
+  .opt.correct .letter{color:var(--ok);border-color:var(--ok);}
+  .opt.wrong .letter{color:var(--err);border-color:var(--err);}
+  .opt .text{flex:1;}
+
+  .expl{
+    margin-top:16px;padding:14px 16px;background:var(--panel-2);
+    border-left:3px solid var(--info);border-radius:0 3px 3px 0;
+    font-size:13.5px;color:var(--muted);line-height:1.55;
+  }
+  .expl strong{color:var(--info);}
+
+  /* Pasek kontrolny */
+  .controls{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;}
+  button{
+    background:var(--accent);color:#0d1117;border:none;
+    padding:10px 22px;border-radius:3px;cursor:pointer;
+    font-family:inherit;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    transition:all 0.15s;
+  }
+  button:hover{background:var(--accent-2);}
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  button.secondary{background:var(--panel-2);color:var(--txt);border:1px solid var(--line);}
+  button.secondary:hover{border-color:var(--accent);background:var(--panel);}
+  button.danger{background:transparent;color:var(--err);border:1px solid var(--err);}
+  button.danger:hover{background:var(--err);color:#0d1117;}
+
+  /* Timer i progress */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;
+    padding:14px 20px;margin-bottom:20px;font-size:13px;letter-spacing:0.08em;
+  }
+  .topbar .timer{color:var(--accent-2);font-weight:700;font-size:15px;}
+  .topbar .timer.danger{color:var(--err);}
+  .topbar .progress{color:var(--muted);}
+  .progressbar{height:4px;background:var(--panel-2);border-radius:2px;overflow:hidden;margin-top:10px;}
+  .progressbar .fill{height:100%;background:var(--accent);transition:width 0.3s;}
+
+  /* Wyniki */
+  .result{text-align:center;padding:30px 0;}
+  .result .score{font-size:54px;font-weight:700;margin:10px 0;}
+  .result .score.pass{color:var(--ok);}
+  .result .score.fail{color:var(--err);}
+  .result .label{color:var(--muted);font-size:13px;letter-spacing:0.15em;text-transform:uppercase;}
+  .result .summary{margin-top:18px;color:var(--txt);font-size:14px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:24px 0;}
+  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:14px;text-align:center;}
+  .stat .val{font-size:22px;color:var(--accent-2);font-weight:700;}
+  .stat .lbl{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;}
+
+  /* Lista błędów */
+  .review-item{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--err);
+    border-radius:3px;padding:16px;margin-bottom:12px;
+  }
+  .review-item.correct{border-left-color:var(--ok);}
+  .review-item .meta{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+  .review-item .q{font-size:14px;margin-bottom:10px;color:var(--txt);}
+  .review-item .a{font-size:13px;margin:4px 0;}
+  .review-item .a.ok{color:var(--ok);}
+  .review-item .a.bad{color:var(--err);}
+  .review-item .e{font-size:12.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
+
+  /* Footer */
+  footer{
+    margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
+    text-align:center;color:var(--muted);font-size:11px;letter-spacing:0.1em;
+  }
+
+  /* Filtry */
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+  .filter{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--txt);
+    padding:6px 12px;border-radius:2px;cursor:pointer;font-size:12px;
+    letter-spacing:0.05em;transition:all 0.1s;
+  }
+  .filter:hover{border-color:var(--accent);}
+  .filter.active{background:var(--accent);color:#0d1117;border-color:var(--accent);font-weight:700;}
+
+  .blink{animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:0.4;}}
+
+  @media (max-width:600px){
+    .wrap{padding:18px 12px 60px;}
+    header.app h1{font-size:18px;}
+    .qtext{font-size:15px;}
+    .result .score{font-size:42px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="app">
+  <div>
+    <h1>// STS_SIM</h1>
+    <div class="sub">Symulator egzaminu teoretycznego STS-01 / STS-02</div>
+  </div>
+  <div class="tag">v5.0 · baza online · auto-odświeżanie</div>
+</header>
+
+<div id="app"></div>
+
+<footer>
+  Materiał szkoleniowy. Pytania własnego autorstwa, oparte na rozp. (UE) 2019/947, (UE) 2019/945, ustawie Prawo Lotnicze i wytycznych ULC 1/2025. Nie są to oryginalne pytania egzaminacyjne ULC.
+</footer>
+
+</div>
+
+<script>
+// ============================================================
+//  SILNIK SYMULATORA – parsuje pytania.js, tasuje opcje,
+//  losuje egzamin z zachowaniem proporcji kategorii.
+//  Bazy NIE edytujemy tutaj – wszystko jest w pliku pytania.js
+//  Baza ładowana dynamicznie z cache-bustingiem: po edycji
+//  pytania.js na GitHubie wystarczy odświeżyć stronę (F5).
+// ============================================================
+
+// ---- Konfiguracja (domyślna; nadpisywana z pytania.js po załadowaniu) ----
+const KONFIG = {
+  pytan_w_egzaminie: 40,
+  czas_minut: 60,
+  prog_zaliczenia: 75,
+  pytan_w_powtorce: 10
+};
+
+// ---- Parser bazy pytań ----
+function parsePytania(raw){
+  if(!raw){ return []; }
+  const lines = raw.split('\n');
+  const out = [];
+  let cat = 'Ogólne';
+  let cur = null;
+  let lineNo = 0;
+  const warns = [];
+  function flush(){
+    if(!cur) return;
+    if(!cur.q){ cur = null; return; }
+    if(cur.correct === null){
+      warns.push(`Pominięto pytanie bez poprawnej odpowiedzi (+): "${cur.q.slice(0,60)}..."`);
+      cur = null; return;
+    }
+    if(cur.wrong.length < 1){
+      warns.push(`Pominięto pytanie bez błędnych odpowiedzi (-): "${cur.q.slice(0,60)}..."`);
+      cur = null; return;
+    }
+    out.push(cur);
+    cur = null;
+  }
+  for(const rawLine of lines){
+    lineNo++;
+    const line = rawLine.trim();
+    if(!line) continue;
+    if(line.startsWith('###')){
+      flush();
+      cat = line.replace(/^#+\s*/,'').trim() || 'Ogólne';
+      continue;
+    }
+    if(line.startsWith('P:')){
+      flush();
+      cur = { cat: cat, q: line.slice(2).trim(), correct: null, wrong: [], expl: '' };
+      continue;
+    }
+    if(!cur) continue;
+    if(line.startsWith('+')){
+      const t = line.slice(1).trim();
+      if(cur.correct !== null){
+        warns.push(`Pytanie ma więcej niż jedną poprawną (+) – użyto pierwszej: "${cur.q.slice(0,50)}..."`);
+      } else {
+        cur.correct = t;
+      }
+    } else if(line.startsWith('-')){
+      cur.wrong.push(line.slice(1).trim());
+    } else if(line.startsWith('=')){
+      cur.expl = line.slice(1).trim();
+    }
+    // linie nierozpoznane są ignorowane (np. komentarz)
+  }
+  flush();
+  if(warns.length){
+    console.warn('=== Ostrzeżenia parsera bazy pytań ===');
+    warns.forEach(w => console.warn(' • ' + w));
+  }
+  return out;
+}
+
+// ---- Baza pytań (wypełniana po dynamicznym załadowaniu pytania.js) ----
+let QUESTIONS = [];
+
+// ---- Narzędzia losowe ----
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function pickRandom(arr, n){ return shuffle(arr).slice(0, n); }
+
+// ---- Budowanie opcji z tasowaniem + balansem pozycji poprawnej ----
+// q = {q, correct(text), wrong[], expl, cat}; targetPos = docelowa pozycja poprawnej
+function buildOptions(q, targetPos){
+  const wrong = shuffle(q.wrong);          // potasuj błędne
+  const opts = [...wrong];
+  const pos = Math.max(0, Math.min(targetPos, opts.length)); // bezpieczna pozycja
+  opts.splice(pos, 0, q.correct);          // wstaw poprawną na docelowej pozycji
+  return { cat:q.cat, q:q.q, opts:opts, correct:pos, expl:q.expl };
+}
+
+// Zbuduj zestaw pytań z round-robin pozycji poprawnej (równy rozkład A/B/C/D)
+function buildSet(list){
+  // round-robin pozycji 0..3, ale tasujemy kolejność przydziału by uniknąć wzorca
+  const positions = [];
+  for(let i=0;i<list.length;i++) positions.push(i % 4);
+  const shuffledPos = shuffle(positions);
+  return list.map((q,i) => buildOptions(q, shuffledPos[i]));
+}
+
+// ---- Proporcje egzaminu z rozkładu kategorii w bazie ----
+function categoryCounts(){
+  const c = {};
+  QUESTIONS.forEach(q => c[q.cat] = (c[q.cat]||0)+1);
+  return c;
+}
+function examDistribution(total){
+  const counts = categoryCounts();
+  const cats = Object.keys(counts);
+  const grand = QUESTIONS.length;
+  // wstępny przydział proporcjonalny (z zaokrągleniem)
+  const raw = {};
+  let sum = 0;
+  cats.forEach(cat => {
+    const n = Math.round(total * counts[cat] / grand);
+    raw[cat] = Math.min(n, counts[cat]); // nie więcej niż jest w bazie
+    sum += raw[cat];
+  });
+  // korekta zaokrągleń do dokładnie 'total'
+  const diff = total - sum;
+  if(diff !== 0){
+    // posortuj kategorie wg "reszty" by sprawiedliwie dodać/odjąć
+    const sortable = cats.slice().sort((a,b) => counts[b]-counts[a]);
+    let d = diff;
+    let idx = 0;
+    while(d !== 0 && idx < sortable.length*4){
+      const cat = sortable[idx % sortable.length];
+      if(d > 0 && raw[cat] < counts[cat]){ raw[cat]++; d--; }
+      else if(d < 0 && raw[cat] > 0){ raw[cat]--; d++; }
+      idx++;
+    }
+  }
+  return raw;
+}
+
+function buildExamSet(){
+  const dist = examDistribution(KONFIG.pytan_w_egzaminie);
+  const picked = [];
+  for(const cat of Object.keys(dist)){
+    const pool = QUESTIONS.filter(q => q.cat === cat);
+    picked.push(...pickRandom(pool, dist[cat]));
+  }
+  return buildSet(shuffle(picked));
+}
+
+// ---- Stan aplikacji ----
+const state = {
+  mode:null, questions:[], current:0, answers:[],
+  startTime:null, timerInterval:null, timeLimitMs:0,
+  examMode:false, learnFilter:'all'
+};
+
+function formatTime(ms){
+  if(ms<0) ms=0;
+  const t = Math.floor(ms/1000);
+  return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+}
+
+const app = document.getElementById('app');
+
+// ---- Ekran startowy ----
+function renderMenu(){
+  state.mode='menu';
+  if(state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval=null; }
+
+  // Sprawdzenie czy baza się wczytała
+  if(QUESTIONS.length === 0){
+    app.innerHTML = `
+      <div class="card">
+        <h2>// Błąd wczytywania bazy</h2>
+        <p>Nie udało się wczytać żadnego pytania z pliku <strong>pytania.js</strong>.</p>
+        <p class="muted">Upewnij się, że plik <strong>pytania.js</strong> znajduje się w tym samym folderze co ten plik HTML, oraz że każde pytanie ma treść (P:), jedną poprawną odpowiedź (+) i przynajmniej jedną błędną (-). Szczegóły w konsoli przeglądarki (F12).</p>
+      </div>`;
+    return;
+  }
+
+  const counts = categoryCounts();
+  const dist = examDistribution(KONFIG.pytan_w_egzaminie);
+  let rows = '';
+  Object.keys(counts).forEach(c => {
+    rows += `<tr><td class="cat">${c}</td><td class="num">${counts[c]} / ${dist[c]||0}</td></tr>`;
+  });
+  rows += `<tr><td class="cat">RAZEM</td><td class="num">${QUESTIONS.length} / ${KONFIG.pytan_w_egzaminie}</td></tr>`;
+
+  app.innerHTML = `
+    <div class="modes">
+      <div class="mode" onclick="startExam()">
+        <div class="num">${KONFIG.pytan_w_egzaminie} PYT · ${KONFIG.czas_minut} MIN</div>
+        <h3>▶ Tryb egzaminu</h3>
+        <p>Losowych ${KONFIG.pytan_w_egzaminie} pytań w proporcjach kategorii z bazy. Timer ${KONFIG.czas_minut} min. Próg zaliczenia ${KONFIG.prog_zaliczenia}%.</p>
+      </div>
+      <div class="mode" onclick="startLearn()">
+        <div class="num">${QUESTIONS.length} PYT</div>
+        <h3>▶ Tryb nauki</h3>
+        <p>Przegląd wszystkich pytań z bazy z odpowiedziami i wyjaśnieniami. Filtrowanie po kategoriach.</p>
+      </div>
+      <div class="mode" onclick="startQuickPractice()">
+        <div class="num">${KONFIG.pytan_w_powtorce} PYT</div>
+        <h3>▶ Szybka powtórka</h3>
+        <p>${KONFIG.pytan_w_powtorce} losowych pytań ze wszystkich kategorii, bez timera.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>// Baza pytań</h2>
+      <p class="muted">Rozkład kategorii w bazie i w pojedynczym egzaminie:</p>
+      <table class="cats">
+        <thead><tr><td class="cat"><strong>Kategoria</strong></td><td class="num"><strong>Baza / Egz.</strong></td></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>// O symulatorze</h2>
+      <p class="muted">Pytania w pliku <strong>pytania.js</strong> (edytowalny). Po edycji bazy na GitHubie wystarczy odświeżyć stronę (F5) — symulator pobiera najnowszą wersję automatycznie. Silnik losowo rozrzuca odpowiedzi A/B/C/D przy każdym uruchomieniu i dobiera pytania proporcjonalnie do rozkładu kategorii.</p>
+    </div>
+  `;
+}
+
+function startExam(){
+  state.mode='exam'; state.examMode=true;
+  state.questions = buildExamSet();
+  state.current=0;
+  state.answers=new Array(state.questions.length).fill(null);
+  state.startTime=Date.now();
+  state.timeLimitMs=KONFIG.czas_minut*60*1000;
+  renderQuestion();
+  state.timerInterval=setInterval(updateTimer,1000);
+}
+
+function startQuickPractice(){
+  state.mode='exam'; state.examMode=false;
+  const n = Math.min(KONFIG.pytan_w_powtorce, QUESTIONS.length);
+  state.questions = buildSet(pickRandom(QUESTIONS, n));
+  state.current=0;
+  state.answers=new Array(state.questions.length).fill(null);
+  state.startTime=Date.now();
+  state.timeLimitMs=0;
+  renderQuestion();
+}
+
+function updateTimer(){
+  if(!state.examMode) return;
+  const remaining = state.timeLimitMs - (Date.now()-state.startTime);
+  const el = document.getElementById('timer');
+  if(el){
+    el.textContent = formatTime(remaining);
+    if(remaining < 5*60*1000) el.classList.add('danger');
+    if(remaining < 60*1000) el.classList.add('blink');
+  }
+  if(remaining<=0){
+    clearInterval(state.timerInterval); state.timerInterval=null;
+    finishExam();
+  }
+}
+
+function renderQuestion(){
+  const q = state.questions[state.current];
+  const total = state.questions.length;
+  const answered = state.answers.filter(a=>a!==null).length;
+  const progress = ((state.current+1)/total)*100;
+  const letters = ['A','B','C','D','E','F'];
+
+  let topbar;
+  if(state.examMode){
+    topbar = `<div class="topbar">
+      <div class="progress">Pytanie <strong style="color:var(--accent)">${state.current+1}</strong> / ${total} · udzielono ${answered}</div>
+      <div class="timer" id="timer">${formatTime(state.timeLimitMs)}</div>
+    </div><div class="progressbar"><div class="fill" style="width:${progress}%"></div></div>`;
+  } else {
+    topbar = `<div class="topbar">
+      <div class="progress">Pytanie <strong style="color:var(--accent)">${state.current+1}</strong> / ${total} · tryb powtórki</div>
+      <div class="timer">∞</div>
+    </div><div class="progressbar"><div class="fill" style="width:${progress}%"></div></div>`;
+  }
+
+  const sel = state.answers[state.current];
+  let optsHtml = '';
+  q.opts.forEach((o,i)=>{
+    optsHtml += `<div class="opt ${sel===i?'selected':''}" onclick="selectAnswer(${i})">
+      <div class="letter">${letters[i]}</div><div class="text">${o}</div></div>`;
+  });
+
+  app.innerHTML = `
+    ${topbar}
+    <div class="qbox">
+      <div class="qheader">
+        <span class="qnum">PYTANIE ${state.current+1}/${total}</span>
+        <span class="catname">${q.cat}</span>
+      </div>
+      <div class="qtext">${q.q}</div>
+      <div class="opts">${optsHtml}</div>
+    </div>
+    <div class="controls">
+      <button class="secondary" onclick="prevQuestion()" ${state.current===0?'disabled':''}>← Poprzednie</button>
+      <div style="display:flex;gap:10px;">
+        ${state.examMode?`<button class="danger" onclick="confirmFinish()">Zakończ egzamin</button>`:`<button class="secondary" onclick="renderMenu()">Powrót do menu</button>`}
+        <button onclick="nextQuestion()">${state.current===total-1?'Zakończ →':'Następne →'}</button>
+      </div>
+    </div>`;
+}
+
+function selectAnswer(i){ state.answers[state.current]=i; renderQuestion(); }
+function nextQuestion(){
+  if(state.current<state.questions.length-1){ state.current++; renderQuestion(); }
+  else { finishExam(); }
+}
+function prevQuestion(){ if(state.current>0){ state.current--; renderQuestion(); } }
+
+function confirmFinish(){
+  const unanswered = state.questions.length - state.answers.filter(a=>a!==null).length;
+  let msg = 'Zakończyć egzamin?';
+  if(unanswered>0) msg += `\n\nNieudzielono odpowiedzi na ${unanswered} pytań – zostaną zaliczone jako błędne.`;
+  if(confirm(msg)) finishExam();
+}
+
+function finishExam(){
+  if(state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval=null; }
+  state.mode='result';
+  let correct=0;
+  for(let i=0;i<state.questions.length;i++) if(state.answers[i]===state.questions[i].correct) correct++;
+  const total=state.questions.length;
+  const pct=Math.round(correct/total*100);
+  const passed=pct>=KONFIG.prog_zaliczenia;
+  const timeSpent=Date.now()-state.startTime;
+
+  const catStats={};
+  for(let i=0;i<total;i++){
+    const c=state.questions[i].cat;
+    if(!catStats[c]) catStats[c]={ok:0,total:0};
+    catStats[c].total++;
+    if(state.answers[i]===state.questions[i].correct) catStats[c].ok++;
+  }
+  let catRows='';
+  Object.entries(catStats).forEach(([c,s])=>{
+    const p=Math.round(s.ok/s.total*100);
+    const col=p>=75?'var(--ok)':(p>=50?'var(--accent-2)':'var(--err)');
+    catRows+=`<tr><td class="cat">${c}</td><td class="num" style="color:${col}">${s.ok}/${s.total} · ${p}%</td></tr>`;
+  });
+
+  const letters=['A','B','C','D','E','F'];
+  let review='';
+  for(let i=0;i<total;i++){
+    const q=state.questions[i];
+    const ua=state.answers[i];
+    const ok=ua===q.correct;
+    const uaText = ua===null?'— brak odpowiedzi —':`${letters[ua]}. ${q.opts[ua]}`;
+    review+=`<div class="review-item ${ok?'correct':''}">
+      <div class="meta">PYT. ${i+1} · ${q.cat} · ${ok?'✓ POPRAWNIE':'✗ BŁĄD'}</div>
+      <div class="q">${q.q}</div>
+      ${!ok?`<div class="a bad">Twoja odpowiedź: ${uaText}</div>`:''}
+      <div class="a ok">Poprawna: ${letters[q.correct]}. ${q.opts[q.correct]}</div>
+      ${q.expl?`<div class="e"><strong>WYJAŚNIENIE:</strong> ${q.expl}</div>`:''}
+    </div>`;
+  }
+
+  app.innerHTML=`
+    <div class="card">
+      <div class="result">
+        <div class="label">${state.examMode?'WYNIK EGZAMINU':'WYNIK POWTÓRKI'}</div>
+        <div class="score ${passed?'pass':'fail'}">${pct}%</div>
+        <div class="label">${correct} / ${total} poprawnych odpowiedzi</div>
+        <div class="summary">${passed?'✓ ZALICZONO':'✗ NIEZALICZONO'} (próg ${KONFIG.prog_zaliczenia}%)</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><div class="val">${correct}</div><div class="lbl">Poprawne</div></div>
+        <div class="stat"><div class="val">${total-correct}</div><div class="lbl">Błędne</div></div>
+        <div class="stat"><div class="val">${formatTime(timeSpent)}</div><div class="lbl">Czas</div></div>
+        <div class="stat"><div class="val">${pct}%</div><div class="lbl">Wynik</div></div>
+      </div>
+      <table class="cats">
+        <thead><tr><td class="cat"><strong>Kategoria</strong></td><td class="num"><strong>Wynik</strong></td></tr></thead>
+        <tbody>${catRows}</tbody>
+      </table>
+      <div class="controls" style="margin-top:24px;">
+        <button class="secondary" onclick="renderMenu()">← Menu</button>
+        <button onclick="${state.examMode?'startExam()':'startQuickPractice()'}">Powtórz</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>// Przegląd pytań</h2>
+      <p class="muted">Wszystkie pytania z tej sesji z poprawnymi odpowiedziami i wyjaśnieniami.</p>
+      <div style="margin-top:18px;">${review}</div>
+    </div>`;
+}
+
+// ---- Tryb nauki ----
+function startLearn(){ state.mode='learn'; state.learnFilter='all'; renderLearn(); }
+
+function renderLearn(){
+  const counts = categoryCounts();
+  const cats = ['all', ...Object.keys(counts)];
+  let filters='';
+  cats.forEach(c=>{
+    const label = c==='all'?`WSZYSTKIE (${QUESTIONS.length})`:`${c} (${counts[c]})`;
+    filters+=`<div class="filter ${state.learnFilter===c?'active':''}" onclick="setLearnFilter(${JSON.stringify(c).replace(/"/g,'&quot;')})">${label}</div>`;
+  });
+
+  const filtered = state.learnFilter==='all'?QUESTIONS:QUESTIONS.filter(q=>q.cat===state.learnFilter);
+  const built = buildSet(filtered);   // tasuj opcje też w nauce
+  const letters=['A','B','C','D','E','F'];
+  let list='';
+  built.forEach((q,idx)=>{
+    let opts='';
+    q.opts.forEach((o,i)=>{
+      opts+=`<div class="opt ${i===q.correct?'correct':''}">
+        <div class="letter">${letters[i]}</div><div class="text">${o}</div></div>`;
+    });
+    list+=`<div class="qbox">
+      <div class="qheader"><span class="qnum">${idx+1}</span><span class="catname">${q.cat}</span></div>
+      <div class="qtext">${q.q}</div>
+      <div class="opts">${opts}</div>
+      ${q.expl?`<div class="expl"><strong>WYJAŚNIENIE:</strong> ${q.expl}</div>`:''}
+    </div>`;
+  });
+
+  app.innerHTML=`
+    <div class="topbar">
+      <div class="progress">Tryb nauki · ${filtered.length} pytań</div>
+      <button class="secondary" onclick="renderMenu()" style="padding:6px 14px;">← Menu</button>
+    </div>
+    <div class="filters">${filters}</div>
+    ${list}`;
+}
+
+function setLearnFilter(cat){ state.learnFilter=cat; renderLearn(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ---- Start: dynamiczne wczytanie bazy z cache-bustingiem ----
+function loadAndStart(){
+  app.innerHTML = `
+    <div class="card">
+      <h2>// Wczytywanie bazy pytań...</h2>
+      <p class="muted">Pobieranie najnowszej wersji pytania.js</p>
+    </div>`;
+
+  const script = document.createElement('script');
+  // ?v=timestamp wymusza pobranie świeżej wersji (omija cache przeglądarki i CDN)
+  script.src = 'pytania.js?v=' + Date.now();
+  script.onload = () => {
+    Object.assign(KONFIG, window.KONFIG || {});
+    QUESTIONS = parsePytania(window.PYTANIA_RAW);
+    renderMenu();
+  };
+  script.onerror = () => {
+    app.innerHTML = `
+      <div class="card">
+        <h2>// Błąd wczytywania bazy</h2>
+        <p>Nie udało się pobrać pliku <strong>pytania.js</strong>.</p>
+        <p class="muted">Upewnij się, że plik <strong>pytania.js</strong> leży w tym samym folderze co ten plik HTML (w repozytorium / na serwerze). Jeśli otwierasz plik lokalnie przez podwójne kliknięcie (file://), niektóre przeglądarki blokują ładowanie — użyj hostingu (GitHub Pages) lub lokalnego serwera.</p>
+      </div>`;
+  };
+  document.head.appendChild(script);
+}
+
+loadAndStart();
+</script>
+</body>
+</html>
